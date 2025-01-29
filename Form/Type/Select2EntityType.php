@@ -23,19 +23,22 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
  */
 class Select2EntityType extends AbstractType
 {
+    private ManagerRegistry $registry;
+    private ObjectManager $em;
+    private RouterInterface $router;
+    private array $config;
+
     /**
-     * @param ManagerRegistry $registry
-     * @param ObjectManager $em
-     * @param RouterInterface $router
+     * @param ManagerRegistry   $registry
+     * @param RouterInterface   $router
      * @param array $config
      */
-    public function __construct(
-        private readonly ManagerRegistry $registry,
-        private ObjectManager $em,
-        private readonly RouterInterface $router,
-        private readonly array $config
-    )
+    public function __construct(ManagerRegistry $registry, RouterInterface $router, array $config)
     {
+        $this->registry = $registry;
+        $this->em = $registry->getManager();
+        $this->router = $router;
+        $this->config = $config;
     }
 
     /**

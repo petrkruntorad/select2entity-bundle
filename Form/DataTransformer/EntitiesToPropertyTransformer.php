@@ -16,25 +16,30 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
  */
 class EntitiesToPropertyTransformer implements DataTransformerInterface
 {
-    /**
-     * @param ObjectManager $em
-     * @param string $className
-     * @param string|null $textProperty
-     * @param string $primaryKey
-     * @param string $newTagPrefix
-     * @param string $newTagText
-     * @param PropertyAccessor $accessor
-     */
+    private ObjectManager $em;
+    private string $className;
+    private string $textProperty;
+    private string $primaryKey;
+    private string $newTagPrefix;
+    private string $newTagText;
+    private PropertyAccessor $accessor;
+
+
     public function __construct(
-        private readonly ObjectManager $em,
-        private string                 $className,
-        private readonly ?string       $textProperty = null,
-        private readonly string        $primaryKey = 'id',
-        private readonly string        $newTagPrefix = '__',
-        private readonly string $newTagText = ' (NEW)',
-        private PropertyAccessor $accessor,
+        ObjectManager $em,
+        string $class,
+        ?string $textProperty = null,
+        string $primaryKey = 'id',
+        string $newTagPrefix = '__',
+        string $newTagText = ' (NEW)'
     )
     {
+        $this->em = $em;
+        $this->className = $class;
+        $this->textProperty = $textProperty;
+        $this->primaryKey = $primaryKey;
+        $this->newTagPrefix = $newTagPrefix;
+        $this->newTagText = $newTagText;
         $this->accessor = PropertyAccess::createPropertyAccessor();
     }
 
