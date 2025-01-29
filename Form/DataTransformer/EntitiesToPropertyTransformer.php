@@ -16,66 +16,55 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
  */
 class EntitiesToPropertyTransformer implements DataTransformerInterface
 {
-    /** @var ObjectManager */
-    protected $em;
-    /** @var  string */
-    protected $className;
-    /** @var  string */
-    protected $textProperty;
-    /** @var  string */
-    protected $primaryKey;
-    /** @var  string */
-    protected $newTagPrefix;
-    /** @var string  */
-    protected $newTagText;
-    /** @var PropertyAccessor */
-    protected $accessor;
-
     /**
      * @param ObjectManager $em
-     * @param string $class
+     * @param string $className
      * @param string|null $textProperty
      * @param string $primaryKey
      * @param string $newTagPrefix
+     * @param string $newTagText
+     * @param PropertyAccessor $accessor
      */
-    public function __construct(ObjectManager $em, $class, $textProperty = null, $primaryKey = 'id', $newTagPrefix = '__', $newTagText = ' (NEW)')
+    public function __construct(
+        private readonly ObjectManager $em,
+        private string                 $className,
+        private readonly ?string       $textProperty = null,
+        private readonly string        $primaryKey = 'id',
+        private readonly string        $newTagPrefix = '__',
+        private readonly string $newTagText = ' (NEW)',
+        private PropertyAccessor $accessor,
+    )
     {
-        $this->em = $em;
-        $this->className = $class;
-        $this->textProperty = $textProperty;
-        $this->primaryKey = $primaryKey;
-        $this->newTagPrefix = $newTagPrefix;
-        $this->newTagText = $newTagText;
         $this->accessor = PropertyAccess::createPropertyAccessor();
     }
 
     /**
      * Transform initial entities to array
      *
-     * @param mixed $entities
+     * @param mixed $value
      * @return array
      */
-    public function transform($entities)
+    public function transform(mixed $value): array
     {
-        if (empty($entities)) {
+        if (empty($value)) {
             return array();
         }
 
         $data = array();
 
-        foreach ($entities as $entity) {
+        foreach ($value as $entity) {
             $text = is_null($this->textProperty)
                 ? (string) $entity
                 : $this->accessor->getValue($entity, $this->textProperty);
 
             if ($this->em->contains($entity)) {
-                $value = (string) $this->accessor->getValue($entity, $this->primaryKey);
+                $v = (string) $this->accessor->getValue($entity, $this->primaryKey);
             } else {
-                $value = $this->newTagPrefix . $text;
+                $v = $this->newTagPrefix . $text;
                 $text = $text.$this->newTagText;
             }
 
-            $data[$value] = $text;
+            $data[$v] = $text;
         }
 
         return $data;
@@ -84,26 +73,26 @@ class EntitiesToPropertyTransformer implements DataTransformerInterface
     /**
      * Transform array to a collection of entities
      *
-     * @param array $values
+     * @param mixed $value
      * @return array
      */
-    public function reverseTransform($values)
+    public function reverseTransform(mixed $value): array
     {
-        if (!is_array($values) || empty($values)) {
+        if (!is_array($value) || empty($value)) {
             return array();
         }
 
         // add new tag entries
         $newObjects = array();
         $tagPrefixLength = strlen($this->newTagPrefix);
-        foreach ($values as $key => $value) {
-            $cleanValue = substr($value, $tagPrefixLength);
-            $valuePrefix = substr($value, 0, $tagPrefixLength);
+        foreach ($value as $key => $v) {
+            $cleanValue = substr($v, $tagPrefixLength);
+            $valuePrefix = substr($v, 0, $tagPrefixLength);
             if ($valuePrefix == $this->newTagPrefix) {
                 $object = new $this->className;
                 $this->accessor->setValue($object, $this->textProperty, $cleanValue);
                 $newObjects[] = $object;
-                unset($values[$key]);
+                unset($value[$key]);
             }
         }
 
@@ -112,12 +101,12 @@ class EntitiesToPropertyTransformer implements DataTransformerInterface
             ->select('entity')
             ->from($this->className, 'entity')
             ->where('entity.'.$this->primaryKey.' IN (:ids)')
-            ->setParameter('ids', $values)
+            ->setParameter('ids', $value)
             ->getQuery()
             ->getResult();
 
-          // this will happen if the form submits invalid data
-        if (count($entities) != count($values)) {
+        // this will happen if the form submits invalid data
+        if (count($entities) != count($value)) {
             throw new TransformationFailedException('One or more id values are invalid');
         }
 

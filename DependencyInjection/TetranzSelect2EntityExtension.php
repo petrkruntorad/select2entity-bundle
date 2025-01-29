@@ -2,6 +2,7 @@
 
 namespace Tetranz\Select2EntityBundle\DependencyInjection;
 
+use Exception;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -16,8 +17,9 @@ class TetranzSelect2EntityExtension extends Extension
 {
     /**
      * {@inheritDoc}
+     * @throws Exception
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
