@@ -51,7 +51,7 @@
         {% set attr = attr|merge({'data-classtype': class_type}) %}
     {% endif %}
 
-    <select {{- block('widget_attributes') -}}>
+    <select {{ block('widget_attributes') }}>
         {%- if value is iterable -%}
             {%- if allow_clear -%}
                     <option value=""></option>
